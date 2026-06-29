@@ -1,0 +1,41 @@
+# Model weights (too large for GitHub - use Git LFS or link separately)
+*.pth
+*.pt
+*.ckpt
+*.h5
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Node / React
+node_modules/
+client/node_modules/
+dist/
+.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads / temp files
+uploads/
+temp/
+*.tmp
