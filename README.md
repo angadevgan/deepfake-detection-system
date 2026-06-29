@@ -91,7 +91,7 @@ pip install fastapi uvicorn torch torchvision facenet-pytorch timm opencv-python
 
 Download the pretrained model and place it in the `backend/` folder:
 
-📥 **[Download https://drive.google.com/file/d/12BfXNLgikpynqLYwE6YPcuUYhss9Ejo_/view?usp=drive_link](#)** ← *(add your Google Drive / HuggingFace link here)*
+📥 **[https://drive.google.com/file/d/12BfXNLgikpynqLYwE6YPcuUYhss9Ejo_/view?usp=drive_link](#)** ← 
 
 Start the backend:
 
