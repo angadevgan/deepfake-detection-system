@@ -10,7 +10,6 @@
 
 **A production-ready deepfake detection system using a novel Dual-Branch CNN architecture combining spatial and frequency domain analysis.**
 
-*Final Year Project — Computer Science & Engineering | CCET Chandigarh*
 
 [Features](#features) • [Architecture](#architecture) • [Results](#results) • [Installation](#installation) • [Usage](#usage) • [Dataset](#dataset) • [Citation](#citation)
 
@@ -326,8 +325,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 <div align="center">
-
-Made with ❤️ by **Angad Devgan** | CCET Chandigarh | 2025-26
 
 ⭐ Star this repo if you found it useful!
 
