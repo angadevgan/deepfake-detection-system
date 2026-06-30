@@ -39,7 +39,7 @@ class DualBranchDeepfakeDetector(nn.Module):
 
 
 model = DualBranchDeepfakeDetector().to(DEVICE)
-ckpt  = torch.load('models/deepfake_detector_v2_final.pth', map_location=DEVICE, weights_only=False)
+ckpt  = torch.load('models/deepfake_detector_v3_final.pth', map_location=DEVICE, weights_only=False)
 model.load_state_dict(ckpt['model_state'])
 model.eval()
 print(f"✅ Model loaded — Val AUC: {ckpt.get('val_auc', 'N/A')}, Val Acc: {ckpt.get('val_acc', 'N/A')}")

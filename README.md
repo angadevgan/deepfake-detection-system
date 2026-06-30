@@ -1,157 +1,334 @@
-# 🔍 Deepfake Detection System
+<div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.10-blue?style=flat-square&logo=python)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green?style=flat-square&logo=fastapi)
-![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+# 🔍 DeepGuard — AI Deepfake Detection System
 
-A full-stack AI system for detecting deepfake images and videos using a **dual-branch deep learning architecture** that combines spatial and frequency domain analysis.
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.2+-EE4C2C?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
 
-> 🎓 Final Year Project — B.E. Computer Science Engineering, CCET Chandigarh
+**A production-ready deepfake detection system using a novel Dual-Branch CNN architecture combining spatial and frequency domain analysis.**
+
+*Final Year Project — Computer Science & Engineering | CCET Chandigarh*
+
+[Features](#features) • [Architecture](#architecture) • [Results](#results) • [Installation](#installation) • [Usage](#usage) • [Dataset](#dataset) • [Citation](#citation)
 
 ---
 
-## 🧠 Architecture
+![DeepGuard Demo](assets/demo.png)
 
-The model uses a **dual-branch approach** for robust deepfake detection:
+</div>
 
-| Branch | Model | Input |
-|--------|-------|-------|
-| Spatial Branch | EfficientNet-B4 | Raw face image (RGB) |
-| Frequency Branch | Custom CNN | FFT frequency domain map |
+---
 
-Both branches are fused and passed through a classification head to produce a final real/fake prediction.
+## 📌 Overview
 
-**Training was done in 3 progressive phases on Kaggle (T4 GPU):**
-- Phase 1: Train classification head only (frozen backbone)
-- Phase 2: Fine-tune top layers of EfficientNet-B4
-- Phase 3: Full model fine-tuning with lower learning rate
+DeepGuard is an end-to-end deepfake detection system that identifies AI-generated or manipulated face images and videos with **98.21% accuracy** and **0.9986 AUC-ROC** across multiple deepfake generation methods.
 
-**Results:**
-- ✅ ~98% Accuracy on combined test set
-- ✅ >0.998 AUC (Area Under ROC Curve)
-- ✅ Covers 6 manipulation types (FaceSwap, Deepfakes, Face2Face, NeuralTextures, FaceShifter, etc.)
+The system was progressively trained on three datasets covering six distinct manipulation techniques — GAN-generated fakes, face-swap deepfakes, and reenactment-based manipulations — demonstrating strong cross-dataset generalization.
 
 ---
 
 ## ✨ Features
 
-- 🖼️ **Image Analysis** — Upload any image for real/fake classification
-- 🎥 **Video Frame Analysis** — Extracts and analyzes frames from video files
-- 👤 **MTCNN Face Detection** — Automatically detects and crops faces before analysis
-- 🔥 **Grad-CAM Explainability** — Visual heatmaps showing which regions influenced the prediction
-- 🔁 **Test-Time Augmentation (TTA)** — Multiple augmented passes for more robust predictions
-- ⚠️ **Uncertainty Zone** — Flags low-confidence predictions instead of forcing a binary output
-- 📊 **Prediction History** — SQLite database storing all past predictions
-- 🌐 **Full-Stack Web App** — FastAPI backend + React frontend
+- 🧠 **Dual-Branch Architecture** — EfficientNet-B4 (spatial) + custom FFT CNN (frequency domain)
+- 🔬 **Auto Face Detection** — MTCNN automatically crops faces from uploaded images
+- 🎬 **Video Analysis** — Frame-by-frame analysis with fake probability graph over time
+- 📦 **Batch Processing** — Analyze multiple images simultaneously
+- 🗺️ **Grad-CAM Explainability** — Visualizes which facial regions triggered the prediction
+- ⚖️ **Uncertainty Zone** — Flags borderline predictions (45-55% confidence) as UNCERTAIN
+- 🔄 **Test-Time Augmentation** — Averages predictions on flipped inputs for robustness
+- 🗄️ **Prediction History** — SQLite database stores all past predictions
+- 🌐 **REST API** — FastAPI backend with full OpenAPI documentation
+
+---
+
+## 🏗️ Architecture
+
+```
+Input Image
+     │
+     ▼
+┌─────────────────────────────────────────┐
+│           Face Detection (MTCNN)        │
+│      Crops & aligns facial region       │
+└─────────────────────────────────────────┘
+     │
+     ├──────────────────┬──────────────────
+     │                  │
+     ▼                  ▼
+┌──────────┐      ┌──────────────┐
+│ RGB      │      │ FFT Branch   │
+│ Branch   │      │              │
+│          │      │ FFT map →    │
+│ EfficientNet    │ Lightweight  │
+│ B4       │      │ CNN          │
+│          │      │              │
+│ (1792-d) │      │ (128-d)      │
+└──────────┘      └──────────────┘
+     │                  │
+     └────────┬─────────┘
+              │ Concatenate (1920-d)
+              ▼
+     ┌─────────────────┐
+     │ Fusion Head     │
+     │ FC(512) → ReLU  │
+     │ Dropout(0.4)    │
+     │ FC(128) → ReLU  │
+     │ Dropout(0.3)    │
+     │ FC(2) → Softmax │
+     └─────────────────┘
+              │
+              ▼
+     REAL / FAKE / UNCERTAIN
+```
+
+**Why dual-branch?**
+- RGB branch captures spatial artifacts — texture inconsistencies, blending edges, unnatural skin tones
+- FFT branch detects frequency domain anomalies — GANs leave characteristic high-frequency patterns invisible to the human eye but detectable via Fast Fourier Transform
+
+---
+
+## 📊 Results
+
+### Model Progression
+
+| Model | Training Data | Test Accuracy | AUC-ROC | Test Set |
+|-------|-------------|---------------|---------|----------|
+| v1 | 140k faces (StyleGAN) | 98.49% | 0.9991 | 140k test |
+| v1 | 140k faces | 82.85% | 0.9023 | Combined (domain gap) |
+| v2 | + Celeb-DF v2 (face-swap) | 98.26% | 0.9984 | Combined |
+| **v3** | **+ FaceForensics++ (6 methods)** | **98.21%** | **0.9986** | **Combined** |
+
+### Final Model (v3) Classification Report
+
+```
+              precision    recall  f1-score   support
+        Fake       0.98      0.98      0.98     15659
+        Real       0.98      0.98      0.98     15294
+    accuracy                           0.98     30953
+```
+
+### Datasets Covered
+| Dataset | Type | Manipulation Method |
+|---------|------|-------------------|
+| 140k Real & Fake Faces | GAN-generated | StyleGAN |
+| Celeb-DF v2 | Face-swap | Neural face replacement |
+| FF++ Deepfakes | Face-swap | Autoencoder-based |
+| FF++ Face2Face | Reenactment | Expression transfer |
+| FF++ FaceSwap | Face-swap | GraphicsSwap |
+| FF++ NeuralTextures | Reenactment | Neural texture rendering |
 
 ---
 
 ## 🗂️ Project Structure
 
 ```
-deepfake-detection-system/
-├── backend/
-│   └── main.py              # FastAPI server — all endpoints, model loading, inference
-├── frontend/
+deepfake/
+├── backend/                    # FastAPI server
+│   ├── main.py                 # API routes + inference pipeline
+│   ├── models/
+│   │   └── deepfake_detector_v3_final.pth   # trained model (download separately)
+│   ├── history.db              # SQLite prediction history (auto-created)
+│   └── requirements.txt        # Python dependencies
+│
+├── frontend/                   # React web app
+│   ├── src/
+│   │   ├── App.js              # Main UI component
+│   │   └── index.js
 │   ├── public/
-│   └── src/
-│       ├── App.js           # Main React app
-│       └── ...
+│   └── package.json
+│
+├── notebooks/                  # Kaggle training notebooks
+│   ├── deepfake_detector_kaggle.ipynb    # v1 training (140k)
+│   ├── finetune_celebdf.ipynb            # v2 fine-tuning (+ Celeb-DF)
+│   └── finetune_ffpp.ipynb              # v3 fine-tuning (+ FF++)
+│
+├── assets/                     # Screenshots and demo images
+│   └── demo.png
+│
 ├── .gitignore
+├── LICENSE
 └── README.md
 ```
 
-> **Note:** The trained model file (`deepfake_detector_v3_final.pth`) is not included in this repo due to file size. Download it from the link below.
-
 ---
 
-## 🚀 Getting Started
+## ⚙️ Installation
 
 ### Prerequisites
-
 - Python 3.10+
 - Node.js 18+
-- pip
+- Git
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/angadevgan/deepfake-detection-system.git
-cd deepfake-detection-system
+git clone https://github.com/YOUR_USERNAME/deepguard.git
+cd deepguard
 ```
 
-### 2. Backend Setup
+### 2. Download the trained model
+
+Download `deepfake_detector_v3_final.pth` from [Google Drive](https://drive.google.com/file/d/12BfXNLgikpynqLYwE6YPcuUYhss9Ejo_/view?usp=drive_link) and place it in `backend/models/`.
+
+### 3. Set up the backend
 
 ```bash
 cd backend
-pip install fastapi uvicorn torch torchvision facenet-pytorch timm opencv-python pillow numpy
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# Mac/Linux
+source venv/bin/activate
+
+pip install -r requirements.txt
 ```
 
-Download the pretrained model and place it in the `backend/` folder:
-
-📥 **[https://drive.google.com/file/d/12BfXNLgikpynqLYwE6YPcuUYhss9Ejo_/view?usp=drive_link](#)** ← 
-
-Start the backend:
-
-```bash
-uvicorn main:app --reload --port 8000
-```
-
-### 3. Frontend Setup
+### 4. Set up the frontend
 
 ```bash
 cd frontend
 npm install
+```
+
+---
+
+## 🚀 Usage
+
+### Start the backend
+
+```bash
+cd backend
+venv\Scripts\activate   # Windows
+uvicorn main:app --reload --port 8000
+```
+
+Backend runs at `http://localhost:8000`
+API docs available at `http://localhost:8000/docs`
+
+### Start the frontend
+
+```bash
+cd frontend
 npm start
 ```
 
-The app will be available at `http://localhost:3000`
+Frontend opens at `http://localhost:3000`
 
 ---
 
-## 📡 API Endpoints
+## 🔌 API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/predict/image` | Analyze an image for deepfake |
-| POST | `/predict/video` | Analyze a video file |
-| GET | `/history` | Get prediction history |
-| GET | `/health` | Health check |
+| `POST` | `/predict` | Single image prediction |
+| `POST` | `/predict-batch` | Multiple image prediction |
+| `POST` | `/predict-video` | Video frame-by-frame analysis |
+| `GET` | `/history` | Retrieve prediction history |
+| `DELETE` | `/history` | Clear prediction history |
+| `GET` | `/stats` | Summary statistics |
+| `GET` | `/` | API status |
+
+### Example API call
+
+```python
+import requests
+
+with open('face.jpg', 'rb') as f:
+    response = requests.post(
+        'http://localhost:8000/predict',
+        files={'file': f}
+    )
+
+result = response.json()
+print(f"Verdict: {result['verdict']}")
+print(f"Fake probability: {result['fake_prob']}%")
+print(f"Real probability: {result['real_prob']}%")
+print(f"Face detected: {result['face_detected']}")
+```
 
 ---
 
-## 🧪 Dataset
+## 📦 Dataset
 
-Trained on a combined dataset:
-- **FaceForensics++** (multiple manipulation types)
-- Real and fake samples covering 6 manipulation techniques
-
-Data preprocessing: MTCNN face detection → 224×224 crop → normalization
-
----
-
-## 📸 Screenshots
-
-*(Add screenshots of the web interface here)*
+| Dataset | Source | Images |
+|---------|--------|--------|
+| 140k Real and Fake Faces | [Kaggle](https://www.kaggle.com/datasets/xhlulu/140k-real-and-fake-faces) | 140,000 |
+| Celeb-DF v2 | [Kaggle](https://www.kaggle.com/datasets/pranabr0y/celebdf-v2image-dataset) | ~100,000 |
+| FaceForensics++ | [Kaggle](https://www.kaggle.com/datasets/xdxd003/ff-c23) | ~70,000 (extracted) |
 
 ---
 
-## 🔬 Research
+## 🧪 Training
 
-This project is associated with research on **carbon-aware benchmarking for AI systems** and lightweight model deployment for real-world detection tasks.
+Training notebooks are in the `notebooks/` folder. Each notebook is self-contained and runs on Kaggle with a free T4 GPU.
+
+| Notebook | Purpose | GPU Time |
+|----------|---------|----------|
+| `deepfake_detector_kaggle.ipynb` | Train v1 from scratch | ~2.5 hrs |
+| `finetune_celebdf.ipynb` | Fine-tune v2 on Celeb-DF | ~1 hr |
+| `finetune_ffpp.ipynb` | Fine-tune v3 on FF++ | ~2 hrs |
 
 ---
 
-## 👤 Author
+## 🛠️ Tech Stack
 
-**Angad Devgan**
-- 📧 [GitHub](https://github.com/angadevgan)
-- 🎓 B.E. CSE — Chandigarh College of Engineering and Technology (CCET)
+**ML/Training**
+- PyTorch 2.2+ with mixed-precision training
+- timm (EfficientNet-B4 pretrained backbone)
+- Albumentations (augmentation pipeline)
+- pytorch-grad-cam (Grad-CAM explainability)
+- facenet-pytorch (MTCNN face detection)
+- scikit-learn (evaluation metrics)
+
+**Backend**
+- FastAPI (REST API framework)
+- OpenCV (video processing)
+- SQLite (prediction history)
+- Uvicorn (ASGI server)
+
+**Frontend**
+- React 18
+- Space Grotesk + Space Mono fonts
+- Custom SVG Grad-CAM visualization
+- Vanilla CSS (no Tailwind dependency)
+
+---
+
+## 📈 Key Technical Contributions
+
+1. **Dual-branch fusion** — RGB spatial + FFT frequency features, novel combination not commonly found in student projects
+2. **Progressive fine-tuning** — Systematic cross-dataset training covering 6 manipulation types without catastrophic forgetting
+3. **Uncertainty quantification** — 45-55% confidence zone treated as UNCERTAIN instead of forced binary prediction
+4. **Test-time augmentation** — Horizontal flip averaging for more robust inference
+5. **Crash-proof training** — Epoch-level checkpointing enables seamless resumption
+6. **Explainability** — Grad-CAM heatmaps show which facial regions triggered the detection
+
+---
+
+## 🙏 Acknowledgements
+
+- [FaceForensics++](https://github.com/ondyari/FaceForensics) — Rössler et al., 2019
+- [Celeb-DF](https://github.com/yuezunli/celeb-deepfakeforensics) — Li et al., 2020
+- [EfficientNet](https://arxiv.org/abs/1905.11946) — Tan & Le, 2019
+- [Grad-CAM](https://arxiv.org/abs/1610.02391) — Selvaraju et al., 2017
 
 ---
 
 ## 📄 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+Made with ❤️ by **Angad Devgan** | CCET Chandigarh | 2025-26
+
+⭐ Star this repo if you found it useful!
+
+</div>
